@@ -308,11 +308,28 @@
     // 恒为 none，而手动行内 !important 或更晚插入的样式表规则都生效）。
     // 提高特异性后与插入先后无关，稳。
     // 另注：只画 body 也够（html 透明时 body 背景会传播到 canvas 并绘制），两个都画是兜底。
+    // scrim：在背景之上再压一层半透明黑，用于背景图亮部大、界面文字对比度不够时。
+    // 纯 CSS 分层，不额外插 DOM 元素。上限 0.85，再高就把图压没了。
+    var scrim = 0;
+    if (typeof theme.scrim === 'number' && isFinite(theme.scrim) && theme.scrim > 0) {
+      scrim = Math.min(0.85, theme.scrim);
+    }
+    var veil = scrim > 0
+      ? 'linear-gradient(rgba(0,0,0,' + scrim + '),rgba(0,0,0,' + scrim + ')), '
+      : '';
+    // 视频主题的兜底只画在 :root，body 必须保持透明 —— 否则 body 的背景会盖住 <video>。
+    // <video> 是 body 的子元素、z-index:-1；负 z-index 子元素向上找最近的层叠上下文
+    // （body 没有自己的），最终落在根层叠上下文里。根层叠上下文的绘制顺序是：
+    //   ① 根元素背景（画到 canvas） ② 负 z-index 后代 ③ 流内块级后代的背景
+    // 所以 body 一旦有背景，就正好画在视频上面。实测症状：面板显示「已应用视频皮肤」，
+    // 画面却是兜底渐变、视频不动。
+    var isVideo = !!(theme.media && theme.media.kind === 'video');
+    var heroSelector = isVideo ? ':root' : ':root, html body';
     if (theme.heroDataUrl) {
-      parts.push(':root, html body { background: url("' + theme.heroDataUrl + '") center / cover no-repeat !important; }');
+      parts.push(heroSelector + ' { background: ' + veil + 'url("' + theme.heroDataUrl + '") center / cover no-repeat !important; }');
     } else if (typeof theme.heroCss === 'string' && theme.heroCss.trim()) {
-      // 内置预设走这条：不带任何第三方素材，纯 CSS 渐变
-      parts.push(':root, html body { background: ' + theme.heroCss.trim() + ' !important; }');
+      // 内置预设与视频主题的兜底走这条：不带任何第三方素材，纯 CSS 渐变
+      parts.push(heroSelector + ' { background: ' + veil + theme.heroCss.trim() + ' !important; }');
     }
 
     // :root.dark 一并覆盖，保证皮肤配色与 ZCode 自己的深浅设置无关，切换系统主题不会把它冲掉

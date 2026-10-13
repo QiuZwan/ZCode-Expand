@@ -129,6 +129,54 @@ test('heroDataUrl 优先于 heroCss（用户选图后不该被预设渐变盖掉
   assert.doesNotMatch(css, /linear-gradient\(red, blue\)/);
 });
 
+test('buildSkinCss 的 scrim 在背景之上压一层半透明黑（纯 CSS 分层，不加 DOM）', () => {
+  const css = C.buildSkinCss({
+    id: 'x', appearance: 'dark', scrim: 0.45,
+    heroCss: 'linear-gradient(red, blue)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.ok(
+    css.includes('background: linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.45)), linear-gradient(red, blue) !important'),
+    '蒙层没有叠在背景之前'
+  );
+});
+
+test('buildSkinCss 不带 scrim 时不加蒙层（保持原图直出）', () => {
+  const css = C.buildSkinCss({
+    id: 'x', appearance: 'dark',
+    heroCss: 'linear-gradient(red, blue)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.ok(!css.includes('rgba(0,0,0,'), '不该出现蒙层');
+});
+
+test('buildSkinCss 的 scrim 上限 0.85（再高压就把图压没了）', () => {
+  const css = C.buildSkinCss({
+    id: 'x', appearance: 'dark', scrim: 5,
+    heroCss: 'linear-gradient(red, blue)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.ok(css.includes('rgba(0,0,0,0.85)'), 'scrim 没有被夹到上限');
+});
+
+test('视频主题的兜底底色只画 :root，body 必须留空（否则盖住 <video>）', () => {
+  const css = C.buildSkinCss({
+    id: 'v', appearance: 'dark', media: { kind: 'video' },
+    heroCss: 'linear-gradient(135deg, #0b1020 0%, #16233f 100%)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.match(css, /:root\s*\{[^}]*background:\s*linear-gradient/);
+  assert.doesNotMatch(css, /html body\s*\{[^}]*background/);
+});
+
+test('图片主题仍然两个选择器都画（body 那层是兜底）', () => {
+  const css = C.buildSkinCss({
+    id: 'i', appearance: 'dark', heroDataUrl: 'data:image/jpeg;base64,AAAA',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.match(css, /:root,\s*html body\s*\{[^}]*background:\s*url\(/);
+});
+
 test('降采样尺寸计算：极端长宽比下短边至少为 1（Review Focus 5）', () => {
   assert.equal(C.scaledSize(10000, 200, 1920).height >= 1, true);
   assert.deepEqual(C.scaledSize(10000, 200, 1920), { width: 1920, height: 38 });
