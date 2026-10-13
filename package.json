@@ -9,6 +9,7 @@
     "node": ">=18"
   },
   "scripts": {
+    "test": "node --test",
     "inspect": "node scripts/inspect.mjs",
     "verify": "node scripts/verify.mjs",
     "apply": "node scripts/apply.mjs",
