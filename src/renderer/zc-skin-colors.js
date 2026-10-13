@@ -300,8 +300,19 @@
 
     var parts = ['/* ZCode Expand · 皮肤 · ' + (theme.name || theme.id || '未命名') + ' · 自动注入，手动修改会被覆盖 */'];
 
+    // 背景层。选择器刻意用 :root（特异性 0,1,0）与 html body（0,0,2），
+    // 而不是直白的 html / body（都是 0,0,1）—— 因为应用自己的重置里有这么一条：
+    //   html,body,#root{…;background:0 0!important}
+    // 同样是 !important、同为 (0,0,1)，而应用的 CSS 由入口模块运行时注入、晚于本 <style>，
+    // 同级后来者赢，所以直白的 html/body 会被它清掉（实测：getComputedStyle(body).backgroundImage
+    // 恒为 none，而手动行内 !important 或更晚插入的样式表规则都生效）。
+    // 提高特异性后与插入先后无关，稳。
+    // 另注：只画 body 也够（html 透明时 body 背景会传播到 canvas 并绘制），两个都画是兜底。
     if (theme.heroDataUrl) {
-      parts.push('html { background: url("' + theme.heroDataUrl + '") center / cover no-repeat !important; }');
+      parts.push(':root, html body { background: url("' + theme.heroDataUrl + '") center / cover no-repeat !important; }');
+    } else if (typeof theme.heroCss === 'string' && theme.heroCss.trim()) {
+      // 内置预设走这条：不带任何第三方素材，纯 CSS 渐变
+      parts.push(':root, html body { background: ' + theme.heroCss.trim() + ' !important; }');
     }
 
     // :root.dark 一并覆盖，保证皮肤配色与 ZCode 自己的深浅设置无关，切换系统主题不会把它冲掉

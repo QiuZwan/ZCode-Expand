@@ -87,19 +87,46 @@ test('buildSkinCss 的变量块同时覆盖 :root 与 :root.dark（防止切换�
   assert.match(css, /:root\s*,\s*:root\.dark\s*\{/);
 });
 
-test('buildSkinCss 带 heroDataUrl 时产出 html 背景层', () => {
+test('buildSkinCss 的背景层用高特异性选择器（避开应用那条 background:0 0!important 重置）', () => {
   const css = C.buildSkinCss({
     id: 'x',
     appearance: 'dark',
     heroDataUrl: 'data:image/jpeg;base64,AAAA',
     colors: C.buildColors(SAMPLE, 'dark'),
   });
-  assert.match(css, /html\s*\{[^}]*background:\s*url\("data:image\/jpeg;base64,AAAA"\)/);
+  // 应用的 html,body,#root{background:0 0!important} 同为 (0,0,1) 且注入更晚，会压掉直白的 html/body
+  assert.match(css, /:root,\s*html body\s*\{[^}]*background:\s*url\("data:image\/jpeg;base64,AAAA"\)/);
+  // 确认没有退回低特异性的裸 html/body 写法
+  assert.doesNotMatch(css, /(^|[^,\w])html,\s*body\s*\{/);
+  assert.doesNotMatch(css, /(^|[^,\w:])html\s*\{\s*background/);
 });
 
-test('buildSkinCss 不带 heroDataUrl 时不产出 html 背景层（只用变量配色）', () => {
+test('buildSkinCss 不带背景时不产出任何背景规则（只用变量配色）', () => {
   const css = C.buildSkinCss({ id: 'x', appearance: 'dark', colors: C.buildColors(SAMPLE, 'dark') });
-  assert.doesNotMatch(css, /^html\s*\{/m);
+  assert.doesNotMatch(css, /:root,\s*html body\s*\{/);
+  assert.doesNotMatch(css, /\{\s*background:/);
+});
+
+test('buildSkinCss 带 heroCss 时产出渐变背景层（内置预设走这条）', () => {
+  const css = C.buildSkinCss({
+    id: 'x',
+    appearance: 'dark',
+    heroCss: 'linear-gradient(135deg, #0b1020 0%, #2b3a67 100%)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.match(css, /:root,\s*html body\s*\{[^}]*background:\s*linear-gradient\(135deg, #0b1020 0%, #2b3a67 100%\)\s*!important/);
+});
+
+test('heroDataUrl 优先于 heroCss（用户选图后不该被预设渐变盖掉）', () => {
+  const css = C.buildSkinCss({
+    id: 'x',
+    appearance: 'dark',
+    heroDataUrl: 'data:image/jpeg;base64,AAAA',
+    heroCss: 'linear-gradient(red, blue)',
+    colors: C.buildColors(SAMPLE, 'dark'),
+  });
+  assert.match(css, /background:\s*url\("data:image\/jpeg;base64,AAAA"\)/);
+  assert.doesNotMatch(css, /linear-gradient\(red, blue\)/);
 });
 
 test('降采样尺寸计算：极端长宽比下短边至少为 1（Review Focus 5）', () => {

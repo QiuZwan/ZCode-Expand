@@ -32,3 +32,6 @@ handoff/*
 # 本地工具缓存（CodeGraph 索引、Playwright MCP 快照）
 .codegraph/
 .playwright-mcp/
+
+# 头脑风暴用的临时预览页（一次性，不入库）
+.superpowers/

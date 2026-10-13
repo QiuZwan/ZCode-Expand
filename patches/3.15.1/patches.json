@@ -37,19 +37,29 @@
       "from": "src/main/zc-usage-overlay.js",
       "to": "out/main/zcode-expand/zc-usage-overlay.js",
       "description": "token 用量状态条渲染层（原版 overlay.js 裁剪改造：删语言/mine/协调器改 pane 容器锚，纯 DOM 不碰 React）"
+    },
+    {
+      "from": "src/renderer/zc-skin-colors.js",
+      "to": "out/renderer/zcode-expand/zc-skin-colors.js",
+      "description": "皮肤颜色数学与 CSS 拼装（渲染层，暴露 window.__ZC_SKIN_COLORS__；纯 IIFE 无 DOM 依赖，npm test 直接单测）"
+    },
+    {
+      "from": "src/renderer/zc-skin.js",
+      "to": "out/renderer/zcode-expand/zc-skin.js",
+      "description": "皮肤引擎与控制面板（渲染层，暴露 window.__ZC_SKIN__；必须在 zc-skin-colors.js 之后加载。注意它抹的是两个窗口壳变量，Windows 走 win-alt 不是 alt，见 doc/20261013-设计文档-皮肤控制.md §4 事实 9）"
     }
   ],
   "targets": [
     {
       "file": "out/renderer/index.html",
-      "description": "在应用入口脚本之前注入备注模块，保证 window.__ZC_EXPAND__ 先就绪（3.12.3 入口 chunk：index-Bz4oM8b0 → 3.14.0 index-Bio_3x-X → 3.14.4 index-j49i-A1J）；追加 BigModel 账号模块 zc-accounts.js，与备注模块同样先于入口脚本加载，保证 window.__ZC_ACCOUNTS__ 就绪；3.14.5 入口 index-j49i-A1J→index-DPCLMOQY（标签形态同构）",
+      "description": "在应用入口脚本之前注入备注模块，保证 window.__ZC_EXPAND__ 先就绪（3.12.3 入口 chunk：index-Bz4oM8b0 → 3.14.0 index-Bio_3x-X → 3.14.4 index-j49i-A1J）；追加 BigModel 账号模块 zc-accounts.js，与备注模块同样先于入口脚本加载，保证 window.__ZC_ACCOUNTS__ 就绪；3.14.5 入口 index-j49i-A1J→index-DPCLMOQY（标签形态同构）；2026-10-13 追加皮肤模块 zc-skin-colors.js + zc-skin.js，同样先于入口脚本加载，colors 必须排在 skin 之前（skin 启动时读 window.__ZC_SKIN_COLORS__）；本条 edit 的 replace 与 marker 随之扩写——锚点只有这一个，另起 edit 会重复插入",
       "edits": [
         {
           "note": "注入脚本标签",
           "find": "<script type=\"module\" crossorigin src=\"./assets/index-LfnUiiZT.js\"></script>",
-          "replace": "<script src=\"./zcode-expand/zc-remarks.js\"></script>\n    <script src=\"./zcode-expand/zc-accounts.js\"></script>\n    <script type=\"module\" crossorigin src=\"./assets/index-LfnUiiZT.js\"></script>",
+          "replace": "<script src=\"./zcode-expand/zc-skin-colors.js\"></script>\n    <script src=\"./zcode-expand/zc-skin.js\"></script>\n    <script src=\"./zcode-expand/zc-remarks.js\"></script>\n    <script src=\"./zcode-expand/zc-accounts.js\"></script>\n    <script type=\"module\" crossorigin src=\"./assets/index-LfnUiiZT.js\"></script>",
           "expect": 1,
-          "marker": "zcode-expand/zc-accounts.js"
+          "marker": "zcode-expand/zc-skin.js"
         }
       ]
     },
