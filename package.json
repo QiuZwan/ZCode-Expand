@@ -15,6 +15,7 @@
     "apply": "node scripts/apply.mjs",
     "apply:dry": "node scripts/apply.mjs --dry-run",
     "rollback": "node scripts/rollback.mjs",
-    "rollback:list": "node scripts/rollback.mjs --list"
+    "rollback:list": "node scripts/rollback.mjs --list",
+    "deploy:runtime": "node scripts/deploy-runtime.mjs"
   }
 }

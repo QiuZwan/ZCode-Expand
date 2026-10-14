@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- ZCode-Expand 桌宠 · 桌面模式的外壳页
+     由 desktop.mjs 用 loadFile 载入（自己的一次性 session partition）。
+     页面脚本就是渲染层那份 src/runtime/renderer/pet.js——它在见到 window.__ZC_PET_PAGE__
+     时会走「桌面页」分支，见不到就走「窗口内」分支，于是两种摆放共用同一份显示层。 -->
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' file:; style-src 'unsafe-inline'; img-src file: data: blob:; media-src file: data: blob:">
+<title>ZCode-Expand</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}</style>
+</head>
+<body>
+<script src="../renderer/pet.js"></script>
+</body>
+</html>

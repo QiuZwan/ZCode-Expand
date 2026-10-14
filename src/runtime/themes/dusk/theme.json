@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "暮色",
+  "description": "内置主题：纯 CSS 渐变，不含任何第三方素材。",
+  "author": "ZCode-Expand",
+  "license": "MIT",
+  "palette": {
+    "seed": "#a855f7",
+    "variant": "vivid"
+  },
+  "wallpaper": {
+    "gradient": "linear-gradient(135deg, #1a0f1f 0%, #2d1b3d 50%, #4a2b52 100%)",
+    "dim": 0
+  },
+  "glass": {
+    "opacity": 0.7,
+    "blur": 18
+  },
+  "radius": 1,
+  "startup": {
+    "animation": "pop"
+  }
+}

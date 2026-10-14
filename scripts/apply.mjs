@@ -12,8 +12,9 @@
 //
 // 任何一步不通过都不会改动安装目录。
 
-import { existsSync, mkdirSync, copyFileSync, renameSync, writeFileSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, copyFileSync, cpSync, renameSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { homedir } from 'node:os';
 import {
   parseArgs,
   resolveInstallDir,
@@ -24,6 +25,7 @@ import {
   backupDir,
   stateDir,
   timestamp,
+  REPO_ROOT,
 } from './lib/env.mjs';
 import { loadPatchSet, buildReplacements, loadAddedFiles } from './lib/patch.mjs';
 import {
@@ -44,6 +46,40 @@ function step(msg) {
 
 function info(msg) {
   console.log(`   ${msg}`);
+}
+
+/**
+ * 引导层（out/zcode-expand/boot.mjs）加载的是用户目录里的 runtime，不是 asar 里的。
+ * 部署失败不算 apply 失败：runtime 缺失时引导层会静默跳过，ZCode 照常启动。
+ * ⚠️ 必须在"补丁已全部就位"的空操作路径上也调用一次——否则改了 src/runtime/ 之后
+ * 重跑 apply 会什么都不做，用户以为更新了其实没更新。
+ */
+function deployRuntime() {
+  step('部署运行时到用户目录');
+  try {
+    const runtimeSrc = join(REPO_ROOT, 'src', 'runtime');
+    const runtimeHome = process.env.ZCODE_EXPAND_HOME || join(homedir(), '.zcode-expand');
+    const runtimeDest = join(runtimeHome, 'runtime');
+    if (!existsSync(runtimeSrc)) {
+      info('仓库里没有 src/runtime/，跳过（引导层会静默跳过）');
+      return;
+    }
+    mkdirSync(runtimeDest, { recursive: true });
+    cpSync(runtimeSrc, runtimeDest, { recursive: true, force: true });
+    info(`已部署：${runtimeSrc} → ${runtimeDest}`);
+
+    // 渲染层功能模块也走用户目录：由主进程注册的 preload 注入主世界，不再打进 asar。
+    // 这样改渲染层代码不用重打补丁，也不用 rollback → apply。
+    const rendererSrc = join(REPO_ROOT, 'src', 'renderer');
+    if (existsSync(rendererSrc)) {
+      const rendererDest = join(runtimeDest, 'renderer');
+      mkdirSync(rendererDest, { recursive: true });
+      cpSync(rendererSrc, rendererDest, { recursive: true, force: true });
+      info(`已部署：${rendererSrc} → ${rendererDest}`);
+    }
+  } catch (err) {
+    info(`部署运行时失败（不影响 ZCode 启动，功能可能不生效）：${err.message}`);
+  }
 }
 
 async function main() {
@@ -119,6 +155,7 @@ async function main() {
 
     if (replace.size === 0 && addEffective.size === 0) {
       console.log('\n补丁已全部就位，未做任何改动。');
+      deployRuntime();
       return;
     }
 
@@ -206,6 +243,8 @@ async function main() {
     'utf8'
   );
   info(`状态记录：${stateFile}`);
+
+  deployRuntime();
 
   console.log('\n完成。重新启动 ZCode 后生效。');
   console.log('回滚：node scripts/rollback.mjs');

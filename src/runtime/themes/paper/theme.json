@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "宣纸",
+  "description": "内置主题：纯 CSS 渐变，不含任何第三方素材。",
+  "author": "ZCode-Expand",
+  "license": "MIT",
+  "palette": {
+    "seed": "#b45309",
+    "variant": "soft"
+  },
+  "wallpaper": {
+    "gradient": "linear-gradient(135deg, #faf6ee 0%, #f2ebdd 55%, #e6dcc8 100%)",
+    "dim": 0
+  },
+  "glass": {
+    "opacity": 0.66,
+    "blur": 12
+  },
+  "radius": 1,
+  "startup": {
+    "animation": "pop"
+  }
+}

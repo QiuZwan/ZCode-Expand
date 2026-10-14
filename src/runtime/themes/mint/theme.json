@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "薄荷",
+  "description": "内置主题：纯 CSS 渐变，不含任何第三方素材。",
+  "author": "ZCode-Expand",
+  "license": "MIT",
+  "palette": {
+    "seed": "#10b981",
+    "variant": "soft"
+  },
+  "wallpaper": {
+    "gradient": "linear-gradient(135deg, #e8f6f0 0%, #d3ebe2 55%, #b9dcd2 100%)",
+    "dim": 0
+  },
+  "glass": {
+    "opacity": 0.68,
+    "blur": 14
+  },
+  "radius": 1,
+  "startup": {
+    "animation": "pop"
+  }
+}

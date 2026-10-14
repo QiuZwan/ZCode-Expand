@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "午夜蓝",
+  "description": "内置主题：纯 CSS 渐变，不含任何第三方素材。",
+  "author": "ZCode-Expand",
+  "license": "MIT",
+  "palette": {
+    "seed": "#3b82f6",
+    "variant": "natural"
+  },
+  "wallpaper": {
+    "gradient": "linear-gradient(135deg, #0b1020 0%, #16233f 55%, #2b3a67 100%)",
+    "dim": 0
+  },
+  "glass": {
+    "opacity": 0.72,
+    "blur": 16
+  },
+  "radius": 1,
+  "startup": {
+    "animation": "pop"
+  }
+}
