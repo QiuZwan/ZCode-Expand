@@ -5,7 +5,7 @@
 import { regionAlphas, mainCappedByFrame, GLASS_REGIONS, regionHighlightCss } from '../src/runtime/appearance/glass.mjs';
 import { generatePalette, extractColors, contrastRatio, isPaletteColor, filteredBackdrop } from '../src/runtime/appearance/palette.mjs';
 import { resolveLook, mergeLayers, checkManifest, DEFAULT_CONFIG, videoKey } from '../src/runtime/appearance/look.mjs';
-import { buildCss, contrastForeground, isSafeCssValue } from '../src/runtime/appearance/css.mjs';
+import { buildCss, contrastForeground, isSafeCssValue, COVERED_WORKSPACE, PLUGIN_PAGE_LAYER } from '../src/runtime/appearance/css.mjs';
 
 let pass = 0;
 let fail = 0;
@@ -110,6 +110,13 @@ console.log('── css（生成）');
   ok('壁纸层 z-index:-1', css.includes('z-index: -1'));
   ok('毛玻璃用 #root 上的 color-mix', css.includes('#root {') && css.includes('color-mix('));
   ok('有 backdrop-filter', css.includes('backdrop-filter: blur(14px)'));
+  // 侧栏插件页的 <webview> 在 <body> 下、#root 之外，设置页半透明时会整个透出来。
+  // 只在这个状态下藏它，且必须和 ZCode 藏工作区用同一个判定条件。
+  ok('玻璃下：设置盖住工作区时藏掉侧栏插件页那层',
+    css.includes(`body:has(> #root ${COVERED_WORKSPACE}) > ${PLUGIN_PAGE_LAYER} {\n  opacity: 0;\n}`),
+    css.split('\n').find((l) => l.includes('sandbox-page-parking')));
+  ok('全不透明（无玻璃）时不生成这条规则',
+    !buildCss(resolveLook({}, null, 'C:/home')).css.includes(PLUGIN_PAGE_LAYER));
   ok('启动画面 logo 尺寸生效', css.includes('width: 120px'));
   ok('圆角变量被写', css.includes('--radius-lg:'));
   ok('不含 !important 之外的危险值', !css.includes('@import'));

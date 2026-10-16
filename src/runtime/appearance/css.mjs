@@ -6,6 +6,10 @@
 //     --color-background-win-alt 撑着；主区是 bg-background
 //   · 启动画面是 #loading > .startup-logo-shell > svg.startup-logo，body.zcode-startup-ready 一设上 #root 就淡入
 // 弹层/菜单/对话框 portal 到 <body>，在 #root 之外，所以它们保持不透明。
+// 3.15 起还有第二样东西画在 #root 之外（读 3.15.3 构建产物实证，非源码）：侧栏里打开的插件页，
+// 它的 <webview> 被搬进 <body> 下追加的一层。打开设置**不卸载**工作区，只是盖住它并置 opacity:0
+// （外层带 data-root-workspace-surface="inert"）——这个 0 到不了那一层：不透明的设置页能盖住它，
+// 半透明的就会透出来，所以要由样式表自己把它藏掉（见 PLUGIN_PAGE_LAYER）。
 //
 // 选择器带 id，这样无论样式表先后都能压过 ZCode 自己的规则——本项目踩过这个坑（见 docs/04 皮肤一节）。
 
@@ -35,6 +39,16 @@ const COLOR_TOKEN = /^(--color-)?[a-z0-9][a-z0-9-]*$/;
 
 /** coding-plan 购买页：唯一一个从 #root 内部整屏盖上来、而不是 portal 到 body 的表面 */
 export const UPGRADE_SURFACE = 'section[data-testid="coding-plan-upgrade-surface"]';
+
+/** 设置页盖住工作区时的那个工作区：ZCode 不卸载它，只把它置成 opacity:0 */
+export const COVERED_WORKSPACE = '[data-root-workspace-surface="inert"]';
+
+/**
+ * <body> 下托着「侧栏里打开的插件页 <webview>」的那一层：挂在 #root 外，却按面板位置对齐。
+ * 不透明的设置页原本能盖住它，半透明的会让它整个透出来——所以设置打开期间，
+ * 样式表要按 ZCode 藏工作区的同样方式把它藏掉。
+ */
+export const PLUGIN_PAGE_LAYER = '[data-sandbox-page-parking]';
 
 const MATH_FUNCTIONS = ['calc', 'min', 'max', 'clamp'];
 const COLOR_FUNCTIONS = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color', 'color-mix', 'light-dark'];
@@ -325,6 +339,8 @@ export function buildCss(look) {
     );
     // 购买页子树继承的是 captured 的值，而不是 #root 上的半透明值
     rules.push(block(UPGRADE_SURFACE, translucent.map(([token]) => `--color-${token}: var(--zc-src-${token})`)));
+    // 插件页那一层在 #root 之外，拿不到上面的半透明值，设置页半透明时会整个透出来。只在设置盖住工作区时藏它。
+    rules.push(block(`body:has(> #root ${COVERED_WORKSPACE}) > ${PLUGIN_PAGE_LAYER}`, ['opacity: 0']));
     // 共用半径的区域合成一条规则，没调过时就只有一条声明
     const byBlur = new Map();
     for (const region of BLUR_REGIONS) {
