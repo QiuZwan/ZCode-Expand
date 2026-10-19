@@ -2,7 +2,7 @@
  * ---------------------------------------------------------------------------
  * 注入到 out/host/zcode-expand/zc-store.mjs（host 的 settings 服务进程）。
  * out/host/index.js 的读/写挂钩处通过 globalThis.__ZC_XP_STORE__ 调用：
- *   merge(settings)          读点：把 zcode-expand.json 的 projectRemarks / accounts /
+ *   merge(settings)          读点：把 zcode-expand.json 的 accounts /
  *                                  zcAccountSwitch 并进 settings
  *   extract(patch, merged)   写点：从 patch 中拆出扩展键落 store，并把它们从
  *                                  落盘内容剔除（setting.json 保持官方纯净）
@@ -13,7 +13,7 @@
  * 手改 JSON 文件后 mtime 变化即失效重读。
  *
  * 结构兼容（务必保持）：normalizeStore 透传未知键，任何一次写入都不得把
- * 已知扩展键之外的字段抹掉——否则改一次备注就会丢掉全部账号快照。
+ * 已知扩展键之外的字段抹掉——否则改一次账号状态就会丢掉全部账号快照。
  *
  * 账号切换（切 BigModel 凭据）走「settings 字段状态机」：
  *   渲染层 update({zcAccountSwitch:{id,state:"pending",issuedAt}})
@@ -74,15 +74,6 @@ function jsonClone(value) {
 // ---------------------------------------------------------------------------
 // 净化：store 是明文 JSON，读写两侧都不信任入参
 // ---------------------------------------------------------------------------
-
-function sanitizeRemarks(value) {
-  if (!isPlainObject(value)) return {};
-  const out = {};
-  for (const key of Object.keys(value)) {
-    if (typeof value[key] === 'string') out[key] = value[key];
-  }
-  return out;
-}
 
 /** 官方 tokenSet 形态：{accessToken, refreshToken?, zcodeJwtToken?}，accessToken 必需 */
 function sanitizeTokenSet(value) {
@@ -166,7 +157,7 @@ async function statMtime() {
 }
 
 function emptyStore() {
-  return { version: 1, projectRemarks: {}, accounts: [] };
+  return { version: 1, accounts: [] };
 }
 
 function normalizeStore(parsed) {
@@ -178,7 +169,6 @@ function normalizeStore(parsed) {
     out[key] = src[key];
   }
   if (!Number.isFinite(out.version)) out.version = 1;
-  out.projectRemarks = sanitizeRemarks(out.projectRemarks);
   out.accounts = sanitizeAccounts(out.accounts);
   const sw = sanitizeSwitchState(out.zcAccountSwitch);
   if (sw) out.zcAccountSwitch = sw;
@@ -596,9 +586,6 @@ globalThis.__ZC_XP_STORE__ = {
     try {
       const store = await readStore();
       const out = { ...settings };
-      if (Object.keys(store.projectRemarks).length > 0) {
-        out.projectRemarks = { ...store.projectRemarks };
-      }
       out.accounts = store.accounts;
       if (store.zcAccountSwitch) out.zcAccountSwitch = store.zcAccountSwitch;
       return out;
@@ -619,21 +606,13 @@ globalThis.__ZC_XP_STORE__ = {
     try {
       if (!isPlainObject(patch) || !isPlainObject(out)) return out;
 
-      const hasRemarks = Object.hasOwn(patch, 'projectRemarks');
       const hasAccounts = Object.hasOwn(patch, 'accounts');
       const deleteRequest = isPlainObject(patch.zcAccountDelete) ? patch.zcAccountDelete : null;
       const switchRequest = isPlainObject(patch.zcAccountSwitch) ? patch.zcAccountSwitch : null;
 
-      if (hasRemarks || hasAccounts || deleteRequest) {
+      if (hasAccounts || deleteRequest) {
         await mutateStore((store) => {
           let changed = false;
-          if (hasRemarks) {
-            const next = sanitizeRemarks(patch.projectRemarks);
-            if (JSON.stringify(store.projectRemarks) !== JSON.stringify(next)) {
-              store.projectRemarks = next;
-              changed = true;
-            }
-          }
           if (hasAccounts) {
             const next = sanitizeAccounts(patch.accounts);
             if (JSON.stringify(store.accounts) !== JSON.stringify(next)) {
@@ -659,15 +638,13 @@ globalThis.__ZC_XP_STORE__ = {
         enqueueSwitch({ id: switchRequest.id, issuedAt });
       }
 
-      delete out.projectRemarks;
       delete out.accounts;
       delete out.zcAccountSwitch;
       delete out.zcAccountDelete;
       return out;
     } catch (err) {
       // store 落盘失败不阻塞官方 setting.json 写入；渲染层内存值仍在，下次写入自愈。
-      // projectRemarks 交回官方 setting.json（沿用既有兜底），但 accounts 与切换
-      // 请求一律不回写——它们含明文令牌，不能进 setting.json / 日志。
+      // accounts 与切换请求一律不回写——它们含明文令牌，不能进 setting.json / 日志。
       logError('extract 失败（本次写入未落 store）', err?.message ?? err);
       if (isPlainObject(merged)) {
         const fallback = { ...merged };
@@ -704,7 +681,6 @@ globalThis.__ZC_XP_STORE__ = {
       return {
         module: 'zcode-expand/store',
         storeFile: STORE_FILE,
-        remarkCount: Object.keys(store.projectRemarks).length,
         accountCount: (store.accounts ?? []).length,
         accounts: (store.accounts ?? []).map((it) => ({
           id: it.id,

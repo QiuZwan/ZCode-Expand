@@ -49,7 +49,7 @@ async function main() {
     if (r.state === 'not-applied') pending += 1;
     console.log(`  ${text.padEnd(24, ' ')} ${r.file}`);
     if (r.description) console.log(`      ${r.description}`);
-    for (const e of r.edits) {
+    for (const e of r.edits ?? []) {
       const mark = e.applied ? '已应用' : e.anchorCount === e.expect ? '锚点OK' : `锚点${e.anchorCount}≠${e.expect}`;
       console.log(`      #${e.index} ${mark}${e.note ? ` — ${e.note}` : ''}`);
     }
