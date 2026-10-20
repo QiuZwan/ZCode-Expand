@@ -1,0 +1,9 @@
+{
+  "appVersion": "3.16.2",
+  "buildCommitId": "2469e253",
+  "buildTime": "2026-10-19T12:30:51.384Z",
+  "electronBuilderVersion": "26.8.1",
+  "patchFormat": 1,
+  "createdAt": "2026-10-20",
+  "notes": "ZCode 3.16.2 补丁集（自 3.16.1 适配）。"
+}
