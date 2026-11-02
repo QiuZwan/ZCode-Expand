@@ -73,8 +73,8 @@ function guardProcess() {
 guardProcess();
 
 // 注入顺序有语义：面板（overlay）先挂上，用户随时能打开它调外观；
-// 视频壁纸层跟着同步；备注与账号的界面模块最后。
-const RENDERER_MODULES = ['overlay.js', 'wallpaper-video.js', 'pet.js', 'zc-remarks.js', 'zc-accounts.js'];
+// 视频壁纸层跟着同步；备注、账号与远程控制自动激活模块最后。
+const RENDERER_MODULES = ['overlay.js', 'wallpaper-video.js', 'pet.js', 'zc-remarks.js', 'zc-accounts.js', 'zc-webremote.js'];
 
 const CHANNEL_GET = 'zcode-expand:get';
 const CHANNEL_CSS = 'zcode-expand:css';
