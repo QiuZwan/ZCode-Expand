@@ -1,0 +1,9 @@
+{
+  "appVersion": "3.17.2",
+  "buildCommitId": "a2d1ba73",
+  "buildTime": "2026-11-02T06:32:36.912Z",
+  "electronBuilderVersion": "26.17.0",
+  "patchFormat": 1,
+  "createdAt": "2026-11-03",
+  "notes": "ZCode 3.17.2 补丁集（自 3.17.1 适配）。"
+}
